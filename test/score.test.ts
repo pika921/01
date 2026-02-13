@@ -3,7 +3,6 @@ import { SCORE } from '../src/game/config';
 import { createScoreState, registerHit, registerTarget } from '../src/game/score';
 
 describe('score and multiplier', () => {
-
   test('first hit keeps base multiplier', () => {
     let score = createScoreState();
     score = registerHit(score, SCORE.bumper, 1000);
