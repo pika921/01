@@ -15,7 +15,7 @@ export const createScoreState = (): ScoreState => ({
 });
 
 export const registerHit = (state: ScoreState, points: number, now: number): ScoreState => {
-  const comboActive = now - state.lastHitAt <= MULTIPLIER_WINDOW_MS;
+  const comboActive = state.lastHitAt > 0 && now - state.lastHitAt <= MULTIPLIER_WINDOW_MS;
   const multiplier = comboActive ? Math.min(6, state.multiplier + 1) : 1;
   return {
     ...state,
