@@ -21,7 +21,7 @@
 
 0. 初回のみ Settings → Pages で **Build and deployment / Source** を **GitHub Actions** に設定
 1. `main` にマージ
-2. Actions の `Deploy Pages` を確認
+2. Actions の `Deploy Pages` を確認（未設定の場合は warning を出して `deploy` ジョブをスキップ）
 3. `deploy` ジョブの `page_url` か Settings → Pages で URL を確認
 4. URL を開いてプレイ
 
