@@ -1,4 +1,4 @@
-import Matter, { Body, Bodies, Composite, Engine, Events, Runner, World } from 'matter-js';
+import Matter, { Body, Bodies, Engine, Events, Runner, World } from 'matter-js';
 import { BOARD, SCORE } from './config';
 import { createScoreState, registerHit, registerTarget, type ScoreState } from './score';
 import {
