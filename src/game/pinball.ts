@@ -360,6 +360,7 @@ export class PinballGame {
     if (this.ball.position.x <= 478) this.resetBall();
     const force = Math.max(0.02, this.launchCharge * BOARD.launchMaxForce);
     Body.applyForce(this.ball, this.ball.position, { x: 0, y: -force });
+    this.score = registerHit(this.score, SCORE.launch, performance.now());
     this.ballSaveUntil = performance.now() + 7000;
     this.launchCharge = 0;
     Body.setPosition(this.plunger, { x: 500, y: 784 });

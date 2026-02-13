@@ -15,7 +15,10 @@ test('launch, score update, flipper reaction and restart work', async ({ page })
   await page.keyboard.up('Space');
 
   await expect(page.locator('#hud-phase')).toHaveText('PLAYING');
-  await expect(page.locator('#hud-score')).not.toHaveText('SCORE 0');
+  await expect.poll(async () => {
+    const text = (await page.locator('#hud-score').innerText()).replace('SCORE ', '');
+    return Number(text);
+  }).toBeGreaterThan(0);
 
   page.once('dialog', async (dialog) => dialog.accept());
   await page.keyboard.press('KeyR');

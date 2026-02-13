@@ -12,6 +12,7 @@ export const BOARD = {
 };
 
 export const SCORE = {
+  launch: 75,
   bumper: 220,
   sling: 140,
   target: 350,
