@@ -1,17 +1,23 @@
 import { expect, test } from '@playwright/test';
 
-test('launch and restart flow works', async ({ page }) => {
+test('launch, score update, flipper reaction and restart work', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Pinball Lab' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Neon Orbit Pinball' })).toBeVisible();
+  await expect(page.locator('#hud-phase')).toHaveText('READY');
+  await expect(page.locator('#hud-score')).toHaveText('SCORE 0');
+
+  await page.keyboard.down('ArrowLeft');
+  await expect(page.locator('#left-indicator')).toHaveClass(/active/);
+  await page.keyboard.up('ArrowLeft');
 
   await page.keyboard.down('Space');
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(450);
   await page.keyboard.up('Space');
 
-  await page.waitForTimeout(1200);
+  await expect(page.locator('#hud-phase')).toHaveText('PLAYING');
+  await expect(page.locator('#hud-score')).not.toHaveText('SCORE 0');
+
   page.once('dialog', async (dialog) => dialog.accept());
   await page.keyboard.press('KeyR');
-  await page.waitForTimeout(250);
-
-  await expect(page.getByText('ターゲット3枚を揃えるとミッションボーナス + 倍率UP')).toBeVisible();
+  await expect(page.locator('#hud-phase')).toHaveText('READY');
 });

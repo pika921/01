@@ -1,21 +1,21 @@
 export const BOARD = {
   width: 540,
   height: 840,
-  gravity: 1.03,
-  restitution: 0.76,
+  gravity: 1.02,
+  restitution: 0.74,
   friction: 0.001,
-  airFriction: 0.011,
-  maxSpeed: 21,
+  airFriction: 0.01,
+  maxSpeed: 23,
   substeps: 2,
-  launchMaxForce: 0.055,
-  flipperPower: 0.14,
+  launchMaxForce: 0.09,
+  flipperPower: 0.26,
 };
 
 export const SCORE = {
-  bumper: 200,
-  sling: 125,
-  target: 300,
-  missionBonus: 3000,
+  bumper: 220,
+  sling: 140,
+  target: 350,
+  missionBonus: 3500,
 };
 
 export const MULTIPLIER_WINDOW_MS = 3500;

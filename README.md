@@ -1,116 +1,134 @@
-# Pinball Lab (Vite + TypeScript + Matter.js)
+# Neon Orbit Pinball (Vite + TypeScript + Canvas2D + Matter.js)
 
-ブラウザだけで検証できる 2D ピンボールです。PR では GitHub Actions の CI が自動実行され、`main` マージ後は GitHub Pages に自動デプロイされます。
-
-## セットアップ方針
-
-- リポジトリは Public 前提
-- Secrets は追加不要（`GITHUB_TOKEN` のみ）
-- Pages デプロイ時の `base` は Actions で `/$REPO_NAME/` を注入
+高密度の宇宙テーマ2Dピンボールです。検証は **GitHub Actions + GitHub Pages** で完結します。
 
 ## CI / CD
 
-### PR の確認手順
+### PR CI（必須）
 
-1. PR を開く
-2. **Checks** で `CI` ワークフローの完了を確認
-3. Artifacts に `playwright-report` があることを確認
-4. ダウンロードして `index.html` を開くと E2E 結果を閲覧可能
+`pull_request` で以下を実行:
 
-### Pages URL の確認手順
+1. `npm ci`
+2. `npm run lint`
+3. `npm test`
+4. `npx playwright install --with-deps chromium`
+5. `npm run e2e`
 
-0. 初回のみ Settings → Pages で **Build and deployment / Source** を **GitHub Actions** に設定
-1. `main` にマージ
-2. Actions の `Deploy Pages` を確認（未設定の場合は warning を出して `deploy` ジョブをスキップ）
-3. `deploy` ジョブの `page_url` か Settings → Pages で URL を確認
-4. URL を開いてプレイ
+Playwrightレポートは `playwright-report` としてArtifactsへアップロード。
 
-## 操作方法
+### Pages Deploy（必須）
 
-### PC
+`push main` / `workflow_dispatch` で:
 
-- 左フリッパー: `←` or `A`
-- 右フリッパー: `→` or `L`
-- プランジャー: `Space` 長押し → 離す
+1. `npm ci`
+2. `npm run build`
+3. `upload-pages-artifact`
+4. `deploy-pages`
+
+`VITE_BASE_PATH` は Actions で `/$REPO_NAME/` を注入して Pages 配下でも崩れない構成。
+
+## ブラウザ確認手順
+
+1. PRを開く
+2. Checks の CI 成功を確認
+3. Artifacts の `playwright-report` を開く
+4. `main` へマージ
+5. Deploy Pages の `page_url` からプレイ
+
+## 操作
+
+- 左フリッパー: `A` / `←`
+- 右フリッパー: `L` / `→`
+- プランジャー: `Space` 長押し→離す
 - ポーズ: `P`
-- リスタート: `R`（確認ダイアログ）
+- リスタート: `R`（確認あり）
+- モバイル: 左右タップでフリッパー、下部長押しでプランジャー
 
-### モバイル
+## 全面改訂ポイント
 
-- 画面左半分タップ: 左フリッパー
-- 画面右半分タップ: 右フリッパー
-- 画面下部長押し: プランジャー
+- **描画層と物理層を分離**
+  - 物理: `src/game/pinball.ts`
+  - 描画: `src/game/renderer.ts`
+- **盤面レイアウト設定化**
+  - `src/game/tableLayout.ts` に正規化座標(0-1)で要素定義
+- **高密度テーブル要素**
+  - バンパー 6
+  - スリング 2
+  - ターゲット 12（3グループ）
+  - ロールオーバー 6
+  - ゲート 2
+  - キッカー 2
+  - スピナー 1
+  - オービット/ランプ戻りセンサー
 
-## 仕様
+## ルール
 
-- 3ボール制
-- 加点:
-  - バンパー: 200
-  - スリング: 125
-  - ターゲット: 300
-- 倍率:
-  - 一定時間内ヒットで倍率上昇（最大 x6）
-  - ターゲット 3 枚達成でボーナス + 倍率上昇
-- 目標要素:
-  - ターゲット 3 枚点灯コンプリートでミッションボーナス
+- 残機 3
+- 倍率（コンボで上昇）
+- ボールセーブ（開始時＋報酬）
+- ジャックポット（ミッション報酬で短時間有効）
+- ハイスコア/設定は localStorage 保存
 
-## 設定（localStorage 保存）
+## ミッション（8個）
 
-- サウンド ON/OFF
-- 画面揺れ ON/OFF
-- 演出軽量化 ON/OFF
-- デバッグ表示 ON/OFF
+1. ORBIT SETUP（オービット3回）
+2. TARGET SWEEP A（右ターゲット群2セット）
+3. TARGET SWEEP B（中央連続4回）
+4. LANE CHARGE（上部レーン5回）
+5. SPINNER RUSH（スピナー60カウント）
+6. BUMPER HEAT（左右スリング往復8回）
+7. KICKER DELIVERY（αキッカー2回）
+8. JACKPOT BUILD（βキッカー2回）
 
-## デバッグオーバーレイ
+右パネルに **現在ミッション + 次候補2件** を表示。
 
-ON 時に以下を表示:
+## デバッグ
+
+`debug` ON で表示:
 
 - FPS
 - ボール速度
-- 直近 1 秒の衝突回数
-- 物理ステップ回数
+- 直近1秒衝突回数
+- サブステップ数
+- ミッション進行番号
 
-## 調整パラメータ一覧
+## 安定化（観測→仮説→変更→結果）
 
-`src/game/config.ts`
+1. 高速時壁抜け気味
+   - 仮説: 速度と積分粒度
+   - 変更: 固定Δt + `substeps=2`, `maxSpeed=23`
+   - 結果: 貫通再現率低下
+2. フリッパー周辺滞留
+   - 仮説: 低速で脱出力不足
+   - 変更: anti-stuck 微小押し出し
+   - 結果: 微振動ループ減少
+3. 角加速
+   - 仮説: 衝突後速度クランプ不足
+   - 変更: 毎tick速度クランプ + ゲート補正
+   - 結果: 無限加速抑制
 
-- gravity
-- restitution
-- friction
-- airFriction
-- flipperPower
-- maxSpeed
-- substeps
-- launchMaxForce
+## M4 バグ票 / 回帰
 
-## 調整ログ
+1. 発射後に球が噛むことがある → シューターレーン外なら再配置して発射
+2. 右ターゲット進行が見えづらい → 右群点灯状態を可視化
+3. ミッション進行が詰まりやすい → 次候補2件表示で誘導
 
-- `substeps: 1 -> 2` に変更し高速時の壁抜けを軽減
-- `maxSpeed: 28 -> 21` に変更し角での急加速を抑制
-- `airFriction: 0.006 -> 0.011` に変更し振動時の収束を改善
+回帰: `test/mission.test.ts` を追加。
 
-## M3 バグ票と修正ログ（3件）
+## テスト
 
-1. **高速壁抜け**
-   - 観測: 発射直後に右壁周辺でまれに貫通
-   - 仮説: ステップ粗さと速度が高すぎる
-   - 変更: サブステップ 2 / 速度上限導入
-   - 結果: 再現率が大幅に低下
-2. **フリッパー間の微振動停止**
-   - 観測: ボールが挟まり小刻みに振動
-   - 仮説: 空気抵抗が低く反発収束しない
-   - 変更: airFriction 上昇
-   - 結果: 数フレームで離脱しやすく改善
-3. **角での不自然な加速**
-   - 観測: 下部角で速度が増幅
-   - 仮説: 反発連鎖で速度クランプ不足
-   - 変更: 毎 tick で maxSpeed クランプ
-   - 結果: 無限加速を抑止
+- Unit
+  - `test/state.test.ts`
+  - `test/score.test.ts`
+  - `test/storage.test.ts`
+  - `test/mission.test.ts`
+- E2E
+  - `e2e/game.spec.ts`（起動→発射→スコア増加→フリッパー反応→リスタート）
 
-## 既知の制限
+## 素材・権利
 
-- SE は設定のみ先行実装（効果音アセットは未同梱）
-- リプレイ機能は未実装
+- 本作の描画・文言はオリジナル
+- 外部IPの固有素材コピーは不使用
 
 ## スクリプト
 
